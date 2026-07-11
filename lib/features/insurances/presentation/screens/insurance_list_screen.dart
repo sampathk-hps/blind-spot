@@ -1,0 +1,149 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:blindspot/core/constants/app_colors.dart';
+import 'package:blindspot/core/constants/app_sizes.dart';
+import 'package:blindspot/core/constants/app_strings.dart';
+import 'package:blindspot/core/utils/currency_formatter.dart';
+import 'package:blindspot/core/utils/date_formatter.dart';
+import 'package:blindspot/shared/extensions/build_context_ext.dart';
+import 'package:blindspot/shared/widgets/bs_app_bar.dart';
+import 'package:blindspot/shared/widgets/bs_badge.dart';
+import 'package:blindspot/shared/widgets/bs_card.dart';
+import 'package:blindspot/shared/widgets/bs_empty_state.dart';
+import 'package:blindspot/shared/widgets/bs_loading.dart';
+import 'package:blindspot/features/insurances/domain/entities/insurance_entity.dart';
+import 'package:blindspot/features/insurances/presentation/providers/insurance_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+class InsuranceListScreen extends ConsumerStatefulWidget {
+  const InsuranceListScreen({super.key});
+
+  @override
+  ConsumerState<InsuranceListScreen> createState() => _InsuranceListScreenState();
+}
+
+class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
+  String _filter = 'All';
+  final _filters = ['All', 'Active', 'Expiring Soon', 'Expired'];
+
+  @override
+  Widget build(BuildContext context) {
+    final insurancesAsync = ref.watch(insurancesProvider);
+
+    return Scaffold(
+      appBar: BSAppBar(
+        title: AppStrings.insurances,
+        showBackButton: false,
+        actions: [
+          IconButton(icon: const Icon(Icons.add_rounded), onPressed: () => context.push('/insurances/add')),
+        ],
+      ),
+      body: Column(
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(AppSizes.screenPadding),
+            child: Row(
+              children: _filters.map((f) {
+                final isSelected = _filter == f;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(f),
+                    selected: isSelected,
+                    onSelected: (v) => setState(() => _filter = f),
+                    selectedColor: AppColors.brandAccentLight,
+                    labelStyle: TextStyle(color: isSelected ? AppColors.brandAccentDark : context.secondaryTextColor),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? AppColors.brandAccent : context.borderColor)),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          Expanded(
+            child: insurancesAsync.when(
+              data: (insurances) {
+                final filtered = insurances.where((i) {
+                  if (_filter == 'All') return true;
+                  if (_filter == 'Active') return i.computedStatus == InsuranceStatus.active;
+                  if (_filter == 'Expiring Soon') return i.isExpiringSoon;
+                  if (_filter == 'Expired') return i.isExpired;
+                  return true;
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return BSEmptyState(
+                    title: AppStrings.noInsurances,
+                    subtitle: 'Add your first insurance policy',
+                    icon: Icons.shield_outlined,
+                    actionLabel: 'Add Policy',
+                    onAction: () => context.push('/insurances/add'),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(AppSizes.screenPadding),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final ins = filtered[index];
+                    return Dismissible(
+                      key: Key(ins.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        color: AppColors.statusDanger,
+                        child: const Icon(Icons.delete_outline, color: Colors.white),
+                      ),
+                      onDismissed: (_) => ref.read(insuranceNotifierProvider.notifier).deleteInsurance(ins.id),
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: BSCard(
+                          onTap: () => context.push('/insurances/${ins.id}'),
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48, height: 48,
+                                decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                child: Icon(ins.type.icon, color: Colors.teal),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(ins.provider, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 16, color: context.primaryTextColor)),
+                                    const SizedBox(height: 4),
+                                    Text('Renews ${DateFormatter.toDisplay(ins.renewalDate)}', style: GoogleFonts.inter(fontSize: 12, color: context.secondaryTextColor)),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(CurrencyFormatter.format(ins.premium, 'USD'), style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, fontSize: 16, color: context.primaryTextColor)),
+                                  const SizedBox(height: 4),
+                                  if (ins.isExpired) BSBadge.danger('Expired', small: true)
+                                  else if (ins.isExpiringSoon) BSBadge.warning('Expiring', small: true)
+                                  else BSBadge.safe('Active', small: true),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => ListView.builder(itemCount: 3, itemBuilder: (_, __) => const BSShimmerCard(height: 80)),
+              error: (e, _) => Center(child: Text(e.toString())),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
