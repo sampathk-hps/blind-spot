@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:blindspot/core/constants/app_sizes.dart';
 import 'package:blindspot/shared/extensions/build_context_ext.dart';

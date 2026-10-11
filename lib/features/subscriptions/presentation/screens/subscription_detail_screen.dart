@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blindspot/core/constants/app_colors.dart';
 import 'package:blindspot/core/constants/app_sizes.dart';
+import 'package:blindspot/core/constants/app_strings.dart';
 import 'package:blindspot/core/utils/currency_formatter.dart';
 import 'package:blindspot/core/utils/date_formatter.dart';
 import 'package:blindspot/shared/extensions/build_context_ext.dart';
 import 'package:blindspot/shared/widgets/bs_app_bar.dart';
 import 'package:blindspot/shared/widgets/bs_badge.dart';
 import 'package:blindspot/shared/widgets/bs_card.dart';
-import 'package:blindspot/features/subscriptions/domain/entities/subscription_entity.dart';
 import 'package:blindspot/features/subscriptions/presentation/providers/subscription_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -26,26 +26,47 @@ class SubscriptionDetailScreen extends ConsumerWidget {
         final sub = subscriptions.firstWhere((s) => s.id == subscriptionId, orElse: () => throw Exception('Not found'));
         return Scaffold(
           appBar: BSAppBar(
-            title: 'Subscription Details',
+            title: AppStrings.subscriptionDetails,
             actions: [
-              IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => context.push('/subscriptions/$subscriptionId/edit')),
-              IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.statusDanger), onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (c) => AlertDialog(
-                    title: const Text('Delete Subscription'),
-                    content: const Text('Are you sure you want to delete this subscription?'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-                      TextButton(onPressed: () {
-                        ref.read(subscriptionNotifierProvider.notifier).deleteSubscription(subscriptionId);
-                        Navigator.pop(c);
-                        context.pop();
-                      }, child: const Text('Delete', style: TextStyle(color: AppColors.statusDanger))),
-                    ],
-                  ),
-                );
-              }),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => context.push(
+                    '/subscriptions/$subscriptionId/edit'),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: AppColors.statusDanger),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (c) => AlertDialog(
+                      title:
+                          const Text(AppStrings.deleteSubscription),
+                      content: const Text(
+                          AppStrings.deleteSubscriptionConfirm),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(c),
+                          child: const Text(AppStrings.cancel),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            ref
+                                .read(
+                                    subscriptionNotifierProvider.notifier)
+                                .deleteSubscription(subscriptionId);
+                            Navigator.pop(c);
+                            context.pop();
+                          },
+                          child: const Text(AppStrings.delete,
+                              style: TextStyle(
+                                  color: AppColors.statusDanger)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ],
           ),
           body: SingleChildScrollView(
@@ -61,8 +82,10 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Text('${CurrencyFormatter.format(sub.amount, sub.currency)}/${sub.billingCycle.shortLabel}', style: GoogleFonts.jetBrainsMono(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
                         const SizedBox(height: 12),
-                        if (sub.isActive) BSBadge.safe('Active')
-                        else BSBadge.warning('Cancelled'),
+                        if (sub.isActive)
+                          BSBadge.safe(AppStrings.filterActive)
+                        else
+                          BSBadge.warning(AppStrings.filterCancelled),
                       ],
                     ),
                   ),
@@ -71,13 +94,19 @@ class SubscriptionDetailScreen extends ConsumerWidget {
                 BSCard(
                   child: Column(
                     children: [
-                      _DetailRow('Billing Cycle', sub.billingCycle.label),
+                      _DetailRow(AppStrings.billingCycleLabel,
+                          sub.billingCycle.label),
                       const Divider(height: 32),
-                      _DetailRow('Next Billing Date', DateFormatter.toDisplay(sub.nextBillingDate)),
+                      _DetailRow(AppStrings.nextBillingDate,
+                          DateFormatter.toDisplay(sub.nextBillingDate)),
                       const Divider(height: 32),
-                      _DetailRow('Monthly Equivalent', CurrencyFormatter.format(sub.monthlyEquivalent, sub.currency)),
+                      _DetailRow(
+                        'Monthly Equivalent',
+                        CurrencyFormatter.format(
+                            sub.monthlyEquivalent, sub.currency),
+                      ),
                       const Divider(height: 32),
-                      _DetailRow('Category', sub.category.label),
+                      _DetailRow(AppStrings.category, sub.category.label),
                     ],
                   ),
                 ),
@@ -95,8 +124,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-  final Color? valueColor;
-  const _DetailRow(this.label, this.value, {this.valueColor});
+  const _DetailRow(this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +132,10 @@ class _DetailRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: GoogleFonts.inter(color: context.secondaryTextColor)),
-        Text(value, style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: valueColor ?? context.primaryTextColor)),
+        Text(value,
+            style: GoogleFonts.inter(
+                fontWeight: FontWeight.w500,
+                color: context.primaryTextColor)),
       ],
     );
   }

@@ -26,26 +26,44 @@ class InvoiceDetailScreen extends ConsumerWidget {
         final invoice = invoices.firstWhere((i) => i.id == invoiceId, orElse: () => throw Exception('Not found'));
         return Scaffold(
           appBar: BSAppBar(
-            title: 'Invoice Details',
+            title: AppStrings.invoiceDetails,
             actions: [
-              IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => context.push('/invoices/$invoiceId/edit')),
-              IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.statusDanger), onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (c) => AlertDialog(
-                    title: const Text('Delete Invoice'),
-                    content: const Text('Are you sure you want to delete this invoice?'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-                      TextButton(onPressed: () {
-                        ref.read(invoiceNotifierProvider.notifier).deleteInvoice(invoiceId);
-                        Navigator.pop(c);
-                        context.pop();
-                      }, child: const Text('Delete', style: TextStyle(color: AppColors.statusDanger))),
-                    ],
-                  ),
-                );
-              }),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => context.push('/invoices/$invoiceId/edit'),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: AppColors.statusDanger),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (c) => AlertDialog(
+                      title: const Text(AppStrings.deleteInvoice),
+                      content:
+                          const Text(AppStrings.deleteInvoiceConfirm),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(c),
+                          child: const Text(AppStrings.cancel),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            ref
+                                .read(invoiceNotifierProvider.notifier)
+                                .deleteInvoice(invoiceId);
+                            Navigator.pop(c);
+                            context.pop();
+                          },
+                          child: const Text(AppStrings.delete,
+                              style: TextStyle(
+                                  color: AppColors.statusDanger)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ],
           ),
           body: SingleChildScrollView(
@@ -61,9 +79,12 @@ class InvoiceDetailScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Text(CurrencyFormatter.format(invoice.amount, invoice.currency), style: GoogleFonts.jetBrainsMono(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
                         const SizedBox(height: 12),
-                        if (invoice.isPaid) BSBadge.safe('Paid')
-                        else if (invoice.isOverdue) BSBadge.danger('Overdue')
-                        else BSBadge.warning('Unpaid'),
+                        if (invoice.isPaid)
+                          BSBadge.safe(AppStrings.filterPaid)
+                        else if (invoice.isOverdue)
+                          BSBadge.danger(AppStrings.filterOverdue)
+                        else
+                          BSBadge.warning(AppStrings.filterUnpaid),
                       ],
                     ),
                   ),
@@ -72,18 +93,24 @@ class InvoiceDetailScreen extends ConsumerWidget {
                 BSCard(
                   child: Column(
                     children: [
-                      _DetailRow('Due Date', DateFormatter.toDisplay(invoice.dueDate)),
+                      _DetailRow(AppStrings.dueDate,
+                          DateFormatter.toDisplay(invoice.dueDate)),
                       const Divider(height: 32),
-                      _DetailRow('Category', invoice.category.label),
+                      _DetailRow(AppStrings.category, invoice.category.label),
                       const Divider(height: 32),
-                      _DetailRow('Currency', invoice.currency),
+                      _DetailRow(AppStrings.currency, invoice.currency),
                       if (invoice.notes != null && invoice.notes!.isNotEmpty) ...[
                         const Divider(height: 32),
-                        _DetailRow('Notes', invoice.notes!),
+                        _DetailRow(AppStrings.notesOptional,
+                            invoice.notes!),
                       ],
                       if (invoice.isPaid && invoice.paidAt != null) ...[
                         const Divider(height: 32),
-                        _DetailRow('Paid On', DateFormatter.toDisplay(invoice.paidAt!), valueColor: AppColors.statusSafe),
+                        _DetailRow(
+                          'Paid On',
+                          DateFormatter.toDisplay(invoice.paidAt!),
+                          valueColor: AppColors.statusSafe,
+                        ),
                       ],
                     ],
                   ),
@@ -91,9 +118,11 @@ class InvoiceDetailScreen extends ConsumerWidget {
                 const SizedBox(height: AppSizes.xxl),
                 if (!invoice.isPaid)
                   BSButton.primary(
-                    label: 'Mark as Paid',
+                    label: AppStrings.markAsPaid,
                     onPressed: () {
-                      ref.read(invoiceNotifierProvider.notifier).markAsPaid(invoiceId);
+                      ref
+                          .read(invoiceNotifierProvider.notifier)
+                          .markAsPaid(invoiceId);
                       context.pop();
                     },
                   ),

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:blindspot/core/constants/app_strings.dart';
-import 'package:blindspot/core/security/encryption_service.dart';
 import 'package:blindspot/core/storage/secure_storage_service.dart';
 
 class HiveService {

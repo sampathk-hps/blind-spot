@@ -14,6 +14,14 @@ import 'package:blindspot/shared/widgets/bs_empty_state.dart';
 import 'package:blindspot/shared/widgets/bs_loading.dart';
 import 'package:blindspot/features/insurances/domain/entities/insurance_entity.dart';
 import 'package:blindspot/features/insurances/presentation/providers/insurance_provider.dart';
+
+/// Filter tabs — all values sourced from [AppStrings].
+const List<String> _kInsuranceFilters = [
+  AppStrings.filterAll,
+  AppStrings.filterActive,
+  AppStrings.filterExpiringSoon,
+  AppStrings.filterExpired,
+];
 import 'package:google_fonts/google_fonts.dart';
 
 class InsuranceListScreen extends ConsumerStatefulWidget {
@@ -24,8 +32,7 @@ class InsuranceListScreen extends ConsumerStatefulWidget {
 }
 
 class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
-  String _filter = 'All';
-  final _filters = ['All', 'Active', 'Expiring Soon', 'Expired'];
+  String _filter = AppStrings.filterAll;
 
   @override
   Widget build(BuildContext context) {
@@ -45,17 +52,28 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.all(AppSizes.screenPadding),
             child: Row(
-              children: _filters.map((f) {
+              children: _kInsuranceFilters.map((f) {
                 final isSelected = _filter == f;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
                     label: Text(f),
                     selected: isSelected,
-                    onSelected: (v) => setState(() => _filter = f),
+                    onSelected: (_) => setState(() => _filter = f),
                     selectedColor: AppColors.brandAccentLight,
-                    labelStyle: TextStyle(color: isSelected ? AppColors.brandAccentDark : context.secondaryTextColor),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? AppColors.brandAccent : context.borderColor)),
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? AppColors.brandAccentDark
+                          : context.secondaryTextColor,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(
+                        color: isSelected
+                            ? AppColors.brandAccent
+                            : context.borderColor,
+                      ),
+                    ),
                   ),
                 );
               }).toList(),
@@ -65,19 +83,21 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
             child: insurancesAsync.when(
               data: (insurances) {
                 final filtered = insurances.where((i) {
-                  if (_filter == 'All') return true;
-                  if (_filter == 'Active') return i.computedStatus == InsuranceStatus.active;
-                  if (_filter == 'Expiring Soon') return i.isExpiringSoon;
-                  if (_filter == 'Expired') return i.isExpired;
+                  if (_filter == AppStrings.filterAll) return true;
+                  if (_filter == AppStrings.filterActive)
+                    return i.computedStatus == InsuranceStatus.active;
+                  if (_filter == AppStrings.filterExpiringSoon)
+                    return i.isExpiringSoon;
+                  if (_filter == AppStrings.filterExpired) return i.isExpired;
                   return true;
                 }).toList();
 
                 if (filtered.isEmpty) {
                   return BSEmptyState(
                     title: AppStrings.noInsurances,
-                    subtitle: 'Add your first insurance policy',
+                    subtitle: AppStrings.noInsurancesSubtitle,
                     icon: Icons.shield_outlined,
-                    actionLabel: 'Add Policy',
+                    actionLabel: AppStrings.addInsurance,
                     onAction: () => context.push('/insurances/add'),
                   );
                 }
@@ -105,9 +125,15 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
                           child: Row(
                             children: [
                               Container(
-                                width: 48, height: 48,
-                                decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                                child: Icon(ins.type.icon, color: Colors.teal),
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: AppColors.metricInsuranceBackground,
+                                  borderRadius: BorderRadius.circular(
+                                      AppSizes.radiusMd),
+                                ),
+                                child: Icon(ins.type.icon,
+                                    color: AppColors.metricInsuranceColor),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -116,18 +142,38 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
                                   children: [
                                     Text(ins.provider, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 16, color: context.primaryTextColor)),
                                     const SizedBox(height: 4),
-                                    Text('Renews ${DateFormatter.toDisplay(ins.renewalDate)}', style: GoogleFonts.inter(fontSize: 12, color: context.secondaryTextColor)),
+                                    Text(
+                                      'Renews ${DateFormatter.toDisplay(ins.renewalDate)}',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: context.secondaryTextColor),
+                                    ),
                                   ],
                                 ),
                               ),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(CurrencyFormatter.format(ins.premium, 'USD'), style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, fontSize: 16, color: context.primaryTextColor)),
+                                  Text(
+                                    CurrencyFormatter.format(
+                                        ins.premium,
+                                        AppStrings.defaultCurrency),
+                                    style: GoogleFonts.jetBrainsMono(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: context.primaryTextColor),
+                                  ),
                                   const SizedBox(height: 4),
-                                  if (ins.isExpired) BSBadge.danger('Expired', small: true)
-                                  else if (ins.isExpiringSoon) BSBadge.warning('Expiring', small: true)
-                                  else BSBadge.safe('Active', small: true),
+                                  if (ins.isExpired)
+                                    BSBadge.danger(AppStrings.filterExpired,
+                                        small: true)
+                                  else if (ins.isExpiringSoon)
+                                    BSBadge.warning(
+                                        AppStrings.filterExpiringSoon,
+                                        small: true)
+                                  else
+                                    BSBadge.safe(AppStrings.filterActive,
+                                        small: true),
                                 ],
                               ),
                             ],

@@ -25,26 +25,45 @@ class InsuranceDetailScreen extends ConsumerWidget {
         final insurance = insurances.firstWhere((i) => i.id == insuranceId, orElse: () => throw Exception('Not found'));
         return Scaffold(
           appBar: BSAppBar(
-            title: 'Insurance Details',
+            title: AppStrings.insuranceDetails,
             actions: [
-              IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => context.push('/insurances/$insuranceId/edit')),
-              IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.statusDanger), onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (c) => AlertDialog(
-                    title: const Text('Delete Insurance'),
-                    content: const Text('Are you sure you want to delete this policy?'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-                      TextButton(onPressed: () {
-                        ref.read(insuranceNotifierProvider.notifier).deleteInsurance(insuranceId);
-                        Navigator.pop(c);
-                        context.pop();
-                      }, child: const Text('Delete', style: TextStyle(color: AppColors.statusDanger))),
-                    ],
-                  ),
-                );
-              }),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () =>
+                    context.push('/insurances/$insuranceId/edit'),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: AppColors.statusDanger),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (c) => AlertDialog(
+                      title: const Text(AppStrings.deleteInsurance),
+                      content:
+                          const Text(AppStrings.deleteInsuranceConfirm),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(c),
+                          child: const Text(AppStrings.cancel),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            ref
+                                .read(insuranceNotifierProvider.notifier)
+                                .deleteInsurance(insuranceId);
+                            Navigator.pop(c);
+                            context.pop();
+                          },
+                          child: const Text(AppStrings.delete,
+                              style: TextStyle(
+                                  color: AppColors.statusDanger)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ],
           ),
           body: SingleChildScrollView(
@@ -58,11 +77,22 @@ class InsuranceDetailScreen extends ConsumerWidget {
                       children: [
                         Text(insurance.provider, style: GoogleFonts.spaceGrotesk(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
                         const SizedBox(height: 8),
-                        Text(CurrencyFormatter.format(insurance.premium, 'USD'), style: GoogleFonts.jetBrainsMono(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text(
+                          CurrencyFormatter.format(
+                              insurance.premium,
+                              AppStrings.defaultCurrency),
+                          style: GoogleFonts.jetBrainsMono(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
                         const SizedBox(height: 12),
-                        if (insurance.isExpired) BSBadge.danger('Expired')
-                        else if (insurance.isExpiringSoon) BSBadge.warning('Expiring Soon')
-                        else BSBadge.safe('Active'),
+                        if (insurance.isExpired)
+                          BSBadge.danger(AppStrings.filterExpired)
+                        else if (insurance.isExpiringSoon)
+                          BSBadge.warning(AppStrings.filterExpiringSoon)
+                        else
+                          BSBadge.safe(AppStrings.filterActive),
                       ],
                     ),
                   ),
@@ -71,14 +101,18 @@ class InsuranceDetailScreen extends ConsumerWidget {
                 BSCard(
                   child: Column(
                     children: [
-                      _DetailRow('Policy Number', insurance.policyNumber),
+                      _DetailRow(AppStrings.policyNumber,
+                          insurance.policyNumber),
                       const Divider(height: 32),
                       _DetailRow('Type', insurance.type.label),
                       const Divider(height: 32),
-                      _DetailRow('Renewal Date', DateFormatter.toDisplay(insurance.renewalDate)),
-                      if (insurance.notes != null && insurance.notes!.isNotEmpty) ...[
+                      _DetailRow(AppStrings.renewalDate,
+                          DateFormatter.toDisplay(insurance.renewalDate)),
+                      if (insurance.notes != null &&
+                          insurance.notes!.isNotEmpty) ...[
                         const Divider(height: 32),
-                        _DetailRow('Notes', insurance.notes!),
+                        _DetailRow(
+                            AppStrings.notesOptional, insurance.notes!),
                       ],
                     ],
                   ),
@@ -97,8 +131,7 @@ class InsuranceDetailScreen extends ConsumerWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-  final Color? valueColor;
-  const _DetailRow(this.label, this.value, {this.valueColor});
+  const _DetailRow(this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +139,10 @@ class _DetailRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: GoogleFonts.inter(color: context.secondaryTextColor)),
-        Text(value, style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: valueColor ?? context.primaryTextColor)),
+        Text(value,
+            style: GoogleFonts.inter(
+                fontWeight: FontWeight.w500,
+                color: context.primaryTextColor)),
       ],
     );
   }
